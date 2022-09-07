@@ -20,7 +20,7 @@ cat cves.txt | gosploitoy -t 10 -r
 
 First, you'll need to [install go](https://golang.org/doc/install).
 
-Then run this command to download + compile hakrawler:
+Then run this command to download + compile gosploitoy:
 ```
 go install github.com/rafaeleloy/gosploitoy@latest
 ```
