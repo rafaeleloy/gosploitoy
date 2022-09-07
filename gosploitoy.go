@@ -31,15 +31,21 @@ func main() {
 
 	cveExploitResultChan := make(chan string, *workers)
 
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			cveExploitResultChan <- scanner.Text()
+		}
+
+		close(cveExploitResultChan)
+	}()
+
 	wg.Add(*workers)
 	for i := 0; i < *workers; i++ {
 		go func() {
 			defer wg.Done()
-			scanner := bufio.NewScanner(os.Stdin)
 
-			for scanner.Scan() {
-				cveToSearch := scanner.Text()
-
+			for cveToSearch := range cveExploitResultChan {
 				retryPolicy(func() error {
 					return searchExploit(cveToSearch, *retry, cveExploitResultChan)
 				})
@@ -47,12 +53,7 @@ func main() {
 		}()
 	}
 
-	w := bufio.NewWriter(os.Stdout)
-	defer w.Flush()
-
-	for cveExploit := range cveExploitResultChan {
-		fmt.Fprintln(w, cveExploit)
-	}
+	wg.Wait()
 }
 
 func searchExploit(cve string, retry bool, cveExploitResultChan chan<- string) error {
@@ -68,7 +69,10 @@ func searchExploit(cve string, retry bool, cveExploitResultChan chan<- string) e
 	}
 
 	for _, exploit := range exploitDBRes.Data {
-		cveExploitResultChan <- ExploitDBaseUrl + "exploits/" + exploit.ID
+		w := bufio.NewWriter(os.Stdout)
+		defer w.Flush()
+
+		fmt.Fprintln(w, ExploitDBaseUrl+"exploits/"+exploit.ID)
 	}
 
 	return nil
