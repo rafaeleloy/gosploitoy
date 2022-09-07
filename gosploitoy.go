@@ -23,6 +23,8 @@ func main() {
 	workers := flag.Int("t", 5, "Number of workers to utilise.")
 	retry := flag.Bool("r", false, "Retry on errors.")
 
+	flag.Parse()
+
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
 		fmt.Fprintln(os.Stderr, "No cve's detected. Hint: cat cves.txt | gosploitoy")
@@ -109,14 +111,12 @@ func makeGetRequest(url string, target interface{}) error {
 	return nil
 }
 
-func retryPolicy(callback func() error) func() {
-	return func() {
-		for i := 1; i < MaxRetryCount; i++ {
-			err := callback()
+func retryPolicy(callback func() error) {
+	for i := 1; i < MaxRetryCount; i++ {
+		err := callback()
 
-			if err == nil {
-				continue
-			}
+		if err == nil {
+			return
 		}
 	}
 }
