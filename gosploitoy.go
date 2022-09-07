@@ -48,9 +48,14 @@ func main() {
 			defer wg.Done()
 
 			for cveToSearch := range cveExploitResultChan {
-				retryPolicy(func() error {
-					return searchExploit(cveToSearch, *retry, cveExploitResultChan)
-				})
+
+				if *retry {
+					retryPolicy(func() error {
+						return searchExploit(cveToSearch, cveExploitResultChan)
+					})
+				}
+
+				searchExploit(cveToSearch, cveExploitResultChan)
 			}
 		}()
 	}
@@ -58,7 +63,7 @@ func main() {
 	wg.Wait()
 }
 
-func searchExploit(cve string, retry bool, cveExploitResultChan chan<- string) error {
+func searchExploit(cve string, cveExploitResultChan chan<- string) error {
 	exploitDBRes := struct {
 		Data []struct {
 			ID string `json:"id"`
